@@ -424,20 +424,36 @@ app.get('/Panier/:id', (req, res) => {
 
 app.delete('/Panier/:id/delete', (req, res) => {
     const { id } = req.params;
-    // Execute the SQL delete query
+    
+    // Step 1: Delete from Panier table
     db.run('DELETE FROM Panier WHERE id_Montre = ?', [id], function (err) {
         if (err) {
-            console.error('Error deleting montre:', err.message);
+            console.error('Error deleting montre from panier:', err.message);
             res.status(500).json({ error: 'Internal server error' });
             return;
         }
+        
+        // Check if any rows were affected
         if (this.changes === 0) {
-            // No rows were affected, indicating that the montre was not found
-            res.status(404).json({ error: 'Montre not found' });
-        } else {
-            // Montre deleted successfully
-            res.json({ message: 'Montre deleted successfully' });
+            res.status(404).json({ error: 'Montre not found in panier' });
+            return;
         }
+        
+        // Step 2: Delete from Montres table
+        db.run('DELETE FROM Montres WHERE id_Montre = ?', [id], function (err) {
+            if (err) {
+                console.error('Error deleting montre:', err.message);
+                res.status(500).json({ error: 'Internal server error' });
+                return;
+            }
+
+            // Check if any rows were affected
+            if (this.changes === 0) {
+                res.status(404).json({ error: 'Montre not found in Montres table' });
+            } else {
+                res.json({ message: 'Montre deleted successfully from both Panier and Montres' });
+            }
+        });
     });
 });
 
